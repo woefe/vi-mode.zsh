@@ -34,7 +34,8 @@
 #   VI_INSERT_MODE_INDICATOR: the prompt indicator in insert mode
 #   VI_MODE_KEEP_CURSOR: set this to anything to keep your default cursor style
 #                        independent of the current mode
-#
+#   VI_MODE_CURSOR_INSERT: style of cursor in insert mode e.g. VI_MODE_CURSOR_INSERT='\e[1 q'
+#   VI_MODE_CURSOR_NORMAL: style of cursor in normal mode e.g. VI_MODE_CURSOR_NORMAL='\e[5 q'
 
 
 # Updates editor information when the keymap changes.
@@ -45,9 +46,17 @@ function zle-keymap-select() {
     # Change cursor depending on mode.
     # Block cursor in "normal" mode, Beam in insert mode.
     [[ -n "$VI_MODE_KEEP_CURSOR" ]] || if [[ "$VI_KEYMAP" == "vicmd" ]]; then
-        print -n '\e[1 q'
+        if [[ -n "$VI_MODE_CURSOR_INSERT" ]]; then
+            print -n $VI_MODE_CURSOR_INSERT
+        else
+            print -n '\e[1 q'
+        fi
     else
-        print -n '\e[5 q'
+        if [[ -n "$VI_MODE_CURSOR_INSERT" ]]; then
+            print -n $VI_MODE_CURSOR_NORMAL
+        else
+            print -n '\e[5 q'
+        fi
     fi
 
     zle reset-prompt
@@ -64,7 +73,11 @@ zle -N zle-keymap-select
 
 # Reset the cursor to block style before running applications
 function _vi_mode_reset_cursor() {
-    [[ -n "$VI_MODE_KEEP_CURSOR" ]] || print -n '\e[1 q'
+    [[ -n "$VI_MODE_KEEP_CURSOR" ]] || if [[ -n "$VI_MODE_CURSOR_INSERT" ]]; then
+        print -n $VI_MODE_CURSOR_INSERT
+    else
+        print -n '\e[1 q'
+    fi
 }
 autoload -U add-zsh-hook
 add-zsh-hook preexec _vi_mode_reset_cursor

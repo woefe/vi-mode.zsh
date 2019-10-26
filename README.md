@@ -66,3 +66,8 @@ This behavior can be disabled by setting
 ```zsh
 VI_MODE_KEEP_CURSOR=1
 ```
+The appearance of the cursor can be changed
+```zsh
+VI_MODE_CURSOR_INSERT='\e[2 q'
+VI_MODE_CURSOR_NORMAL='\e[6 q'
+```
