@@ -38,7 +38,9 @@
 
 
 # Updates editor information when the keymap changes.
-function zle-keymap-select() {
+function _vi-mode_zle-keymap-select() {
+    (( ! ${+widgets[._vi-mode_orig_zle-keymap-select]} )) || zle ._vi-mode_orig_zle-keymap-select $@
+    local ret=$?
     # Update keymap variable for the prompt
     VI_KEYMAP=$KEYMAP
 
@@ -52,15 +54,22 @@ function zle-keymap-select() {
 
     zle reset-prompt
     zle -R
+
+    return $ret
 }
 
 # Start every prompt in insert mode
-function zle-line-init() {
+function _vi-mode_zle-line-init() {
+    (( ! ${+widgets[._vi-mode_orig_zle-line-init]} )) || zle ._vi-mode_orig_zle-line-init $@
+    local ret=$?
     zle -K viins
+    return $ret
 }
 
-zle -N zle-line-init
-zle -N zle-keymap-select
+(( ! ${+widgets[zle-line-init]} )) || zle -A zle-line-init ._vi-mode_orig_zle-line-init
+zle -N zle-line-init _vi-mode_zle-line-init
+(( ! ${+widgets[zle-keymap-select]} )) || zle -A zle-keymap-select ._vi-mode_orig_zle-keymap-select
+zle -N zle-keymap-select _vi-mode_zle-keymap-select
 
 # Reset the cursor to block style before running applications
 function _vi_mode_reset_cursor() {
