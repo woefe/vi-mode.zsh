@@ -38,7 +38,7 @@
 
 
 # Updates editor information when the keymap changes.
-function zle-keymap-select() {
+function _vi_mode_keymap_select() {
     # Update keymap variable for the prompt
     VI_KEYMAP=$KEYMAP
 
@@ -55,12 +55,24 @@ function zle-keymap-select() {
 }
 
 # Start every prompt in insert mode
-function zle-line-init() {
+function _vi_mode_line_init() {
     zle -K viins
 }
 
-zle -N zle-line-init
-zle -N zle-keymap-select
+# Wraps function ($2) into given zle widget ($1), if the widget already exists.
+function _vi_mode_wrap_widget() {
+    if (( $+widgets[$1] )); then
+        zle -A $1 _vi_mode_orig_$1
+        eval "_vi_mode_wrap_$1() { builtin zle _vi_mode_orig_$1 && $2 }"
+        zle -N $1 "_vi_mode_wrap_$1"
+    else
+        zle -N $1 $2
+    fi
+}
+
+_vi_mode_wrap_widget zle-keymap-select _vi_mode_keymap_select
+_vi_mode_wrap_widget zle-line-init _vi_mode_line_init
+unfunction _vi_mode_wrap_widget
 
 # Reset the cursor to block style before running applications
 function _vi_mode_reset_cursor() {
