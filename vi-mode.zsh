@@ -19,44 +19,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-#
-# Usage
-# -----
-#
-# Source this file in your .zshrc and add '$(vi_mode_status)' to your prompt.
-#
-#
-# Settings
-# --------
-#
-# Set these variables before sourcing this file.
-#   VI_NORMAL_MODE_INDICATOR: the prompt indicator in normal mode
-#   VI_INSERT_MODE_INDICATOR: the prompt indicator in insert mode
-#   VI_MODE_KEEP_CURSOR: set this to anything to keep your default cursor style
-#                        independent of the current mode
-#   VI_MODE_CURSOR_INSERT: style of cursor in insert mode e.g. VI_MODE_CURSOR_INSERT='\e[1 q'
-#   VI_MODE_CURSOR_NORMAL: style of cursor in normal mode e.g. VI_MODE_CURSOR_NORMAL='\e[5 q'
-
-
-# Updates editor information when the keymap changes.
+# cursor style based on mode
 function zle-keymap-select() {
-    # Update keymap variable for the prompt
-    VI_KEYMAP=$KEYMAP
-
-    # Change cursor depending on mode.
-    # Block cursor in "normal" mode, Beam in insert mode.
-    [[ -n "$VI_MODE_KEEP_CURSOR" ]] || if [[ "$VI_KEYMAP" == "vicmd" ]]; then
-        if [[ -n "$VI_MODE_CURSOR_INSERT" ]]; then
-            print -n $VI_MODE_CURSOR_INSERT
-        else
-            print -n '\e[1 q'
-        fi
+    if [[ "$KEYMAP" == "vicmd" ]]; then
+        print -n '\e[2 q'
     else
-        if [[ -n "$VI_MODE_CURSOR_INSERT" ]]; then
-            print -n $VI_MODE_CURSOR_NORMAL
-        else
-            print -n '\e[5 q'
-        fi
+        print -n '\e[6 q'
     fi
 
     zle reset-prompt
@@ -73,12 +41,9 @@ zle -N zle-keymap-select
 
 # Reset the cursor to block style before running applications
 function _vi_mode_reset_cursor() {
-    [[ -n "$VI_MODE_KEEP_CURSOR" ]] || if [[ -n "$VI_MODE_CURSOR_INSERT" ]]; then
-        print -n $VI_MODE_CURSOR_INSERT
-    else
-        print -n '\e[1 q'
-    fi
+    print -n '\e[2 q'
 }
+
 autoload -U add-zsh-hook
 add-zsh-hook preexec _vi_mode_reset_cursor
 
@@ -88,21 +53,29 @@ bindkey -v
 # Reduce esc delay
 export KEYTIMEOUT=1
 
-# Set indicators, if not already set
-: "${VI_NORMAL_MODE_INDICATOR="%(?.%F{blue}•%f%F{cyan}•%f%F{green}•%f.%F{red}•••%f) "}"
-: "${VI_INSERT_MODE_INDICATOR="%(?.%F{blue}❯%f%F{cyan}❯%f%F{green}❯%f.%F{red}❯❯❯%f) "}"
+# fix backspace
+bindkey -M viins "^?" backward-delete-char
 
-# Enable prompt substition. Necessary to use vi_mode_status in your prompt
-setopt PROMPT_SUBST
+# textobjects
+autoload -Uz surround
+zle -N delete-surround surround
+zle -N change-surround surround
+zle -N add-surround surround
+bindkey -M vicmd ds delete-surround
+bindkey -M vicmd cs change-surround
+bindkey -M visual S add-surround
 
-# This function is used in the prompt.
-# For example:
-#
-#PROMPT='$(vi_mode_status)'
-function vi_mode_status() {
-    if [[ "$VI_KEYMAP" == "vicmd" ]]; then
-        echo "$VI_NORMAL_MODE_INDICATOR"
-    else
-        echo "$VI_INSERT_MODE_INDICATOR"
-    fi
-}
+autoload -U select-bracketed
+zle -N select-bracketed
+for m in visual viopp; do
+    for c in {a,i}${(s..)^:-'()[]{}<>bB'}; do
+        bindkey -M $m $c select-bracketed
+    done
+done
+autoload -U select-quoted
+zle -N select-quoted
+for m in visual viopp; do
+    for c in {a,i}{\',\",\`}; do
+        bindkey -M $m $c select-quoted
+    done
+done
