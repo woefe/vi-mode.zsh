@@ -83,6 +83,8 @@ zle -N sudo-command-line
 
 bindkey -M vicmd '^[OP' sudo-command-line
 bindkey -M viins '^[OP' sudo-command-line
+bindkey -M vicmd '^[[[A' sudo-command-line
+bindkey -M viins '^[[[A' sudo-command-line
 # sudo plugin end
 
 # some useless keybindings
